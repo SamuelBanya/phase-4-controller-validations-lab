@@ -1,0 +1,88 @@
+* Notes
+I used these commands to set this lab up:
+#+begin_src bash
+bundle install
+rails db:migrate db:seed
+#+end_src
+
+Related Deliverables For Validations:
+
+Author Validations:
+- 1. The name cannot be blank
+- 2. The e-mail is unique
+
+Post Validations:
+- 1. The title cannot be blank
+- 2. The category is either "Fiction" or "Non-Fiction"
+- 3. The content is at least 100 characters long
+
+Controller Actions:
+- 1. Change AuthorsController#create to send back the error messages if the new author is invalid
+- 2. Change PostsController#update to send back the error messages if the updated post is invalid
+
+
+I revised the 'app/controllers/authors_controller.rb' controller file with the following validations:
+#+begin_src ruby
+class AuthorsController < ApplicationController
+
+  def show
+    author = Author.find(params[:id])
+    render json: author
+  end
+
+  def create
+    author = Author.create!(author_params)
+    render json: author, status: :created
+    rescue ActiveRecord::RecordInvalid => invalid
+      render json: { errors: invalid.record.errors }, status: :unprocessable_entity
+  end
+
+  private
+
+  def author_params
+    params.permit(:email, :name)
+  end
+
+end
+#+end_src
+
+I then revised the 'app/controllers/posts_controller.rb' file with the following validations:
+#+begin_src ruby
+class PostsController < ApplicationController
+  def show
+    post = Post.find(params[:id])
+    render json: post
+  end
+
+  def update
+    post = Post.find(params[:id])
+    post.update!(post_params)
+    render json: post
+    rescue ActiveRecord::RecordInvalid => invalid
+      render json: { errors: invalid.record.errors }, status: :unprocessable_entity
+  end
+
+  private
+
+  def post_params
+    params.permit(:category, :content, :title)
+  end
+end
+#+end_src
+
+I then added the following validations on the 'app/models/author.rb' model:
+#+begin_src ruby
+class Author < ApplicationRecord
+    validates :name, presence: true
+    validates :email, uniqueness: true
+end
+#+end_src
+
+I then added the following validations on the 'app/models/post.rb' model file with the following contents:
+#+begin_src ruby
+class Post < ApplicationRecord
+    validates :title, presence: true
+    validates :content, length: { minimum: 100 }
+    validates :category, inclusion: { in: ["Fiction", "Non-Fiction"] }
+end
+#+end_src
